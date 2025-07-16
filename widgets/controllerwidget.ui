@@ -140,6 +140,7 @@
          <property name="styleSheet">
           <string notr="true">QPushButton {
     background: none;
+	border: none;
 }</string>
          </property>
          <property name="text">
@@ -222,6 +223,7 @@
          <property name="styleSheet">
           <string notr="true">QPushButton {
     background: none;
+	border: none;
 }</string>
          </property>
          <property name="text">

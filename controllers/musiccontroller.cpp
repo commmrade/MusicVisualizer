@@ -1,21 +1,59 @@
 #include "musiccontroller.h"
 #include <QFile>
 #include <QDebug>
+#include <spdlog/spdlog.h>
+#include <QMessageBox>
+
+static constexpr double DEFAULT_SOUND_VOLUME = 0.5;
 
 MusicController::MusicController(QObject *parent)
     : QObject{parent}
 {
     m_decoder = new QAudioDecoder{this};
     m_audioFile = new QFile(this);
+
+    connect(m_decoder, &QAudioDecoder::bufferReady, this, [this] {
+        QAudioBuffer buffer = m_decoder->read();
+        if (buffer.isValid()) {
+            if (!m_audioSink) {
+                QAudioFormat format = buffer.format();
+
+                m_audioSink = new QAudioSink(format, this);
+                m_audioDevice = m_audioSink->start();
+                m_audioSink->setVolume(DEFAULT_SOUND_VOLUME);
+                m_isPlaying = true;
+            }
+            m_audioSamples.append(std::move(buffer));
+
+        }
+    });
+    connect(&m_pushTimer, &QTimer::timeout, this, [this] {
+        int bytesFree = m_audioSink->bytesFree();
+        if (bytesFree) {
+            // Maybe check for empty
+            auto buffer = m_audioSamples.front();
+            m_audioSamples.append(buffer);
+            m_audioSamples.pop_front();
+
+            m_audioDevice->write(buffer.constData<char>(), buffer.byteCount());
+        }
+    });
+    connect(m_decoder, &QAudioDecoder::finished, this, [this] {
+        spdlog::info("Finished processing audio");
+    });
+    connect(m_decoder, QOverload<QAudioDecoder::Error>::of(&QAudioDecoder::error), [](QAudioDecoder::Error err) {
+        spdlog::error("Error decoding audio: {}", static_cast<int>(err));
+    });
 }
 
-static constexpr double DEFAULT_SOUND_VOLUME = 0.5;
+
 
 void MusicController::loadMusic(QStringView path)
 {
     m_audioSamples.clear();
+
     m_decoder->stop();
-    m_decoder->setSourceDevice(nullptr);
+
 
     if (m_audioSink) {
         delete m_audioSink;
@@ -31,36 +69,14 @@ void MusicController::loadMusic(QStringView path)
 
     m_audioFile->setFileName(QString{path});
     if (!m_audioFile->open(QIODevice::ReadOnly)) {
-        throw std::runtime_error("Such file does not exist");
+        spdlog::error("Such file does not exist: {}", path.toString().toStdString());
+        return;
     }
 
     m_decoder->setSourceDevice(m_audioFile);
     m_decoder->start();
 
-    connect(m_decoder, &QAudioDecoder::bufferReady, this, [this] mutable {
-        QAudioBuffer buffer = m_decoder->read();
-        if (buffer.isValid()) {
-            if (!m_audioSink) {
-                QAudioFormat format = buffer.format();
-                m_audioSink = new QAudioSink(format, this);
-                m_audioDevice = m_audioSink->start();
-                m_audioSink->setVolume(DEFAULT_SOUND_VOLUME);
-                m_isPlaying = true;
-            }
-            m_audioSamples.append(std::move(buffer));
-            connect(&m_pushTimer, &QTimer::timeout, this, [this] {
-                int bytesFree = m_audioSink->bytesFree();
-                if (bytesFree) {
-                    // Maybe check for empty
-                    auto buffer = m_audioSamples.front();
-                    m_audioSamples.append(buffer);
-                    m_audioSamples.pop_front();
 
-                    m_audioDevice->write(buffer.constData<char>(), buffer.byteCount());
-                }
-            });
-        }
-    });
 
     m_pushTimer.start(20);
 }
