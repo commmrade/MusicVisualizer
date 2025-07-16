@@ -53,12 +53,9 @@ void MusicController::loadMusic(QStringView path)
                 if (bytesFree) {
                     // Maybe check for empty
                     auto buffer = m_audioSamples.front();
-                    m_audioSamples.pop_front();
                     m_audioSamples.append(buffer);
+                    m_audioSamples.pop_front();
 
-                    if (buffer.startTime() > m_audioSamples.front().startTime()) { // Not playing old samples if new samples arent loaded yet
-                        return; // Also this way audio cycles
-                    }
                     m_audioDevice->write(buffer.constData<char>(), buffer.byteCount());
                 }
             });
