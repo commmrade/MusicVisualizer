@@ -26,8 +26,7 @@ int main(int argc, char *argv[])
         a.setStyleSheet(file.readAll());
         file.close();
     } else {
-        qDebug() << themeLoc;
-        qDebug() << "could not open theme" << file.errorString();
+        spdlog::error("Could not read theme: {}", file.errorString().toStdString());
     }
     a.setStyle(QStyleFactory::create("Fusion"));
     spdlog::info("Theme is loaded");

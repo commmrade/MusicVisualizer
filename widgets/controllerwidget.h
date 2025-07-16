@@ -16,7 +16,7 @@ public:
     explicit ControllerWidget(QWidget *parent = nullptr);
     ~ControllerWidget();
 
-    void loadMusic(QStringView path);
+    void loadMusic(const QString& path);
 private slots:
     void on_volumeSlider_valueChanged(int value);
     void on_playButton_clicked();

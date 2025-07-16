@@ -17,7 +17,7 @@ class MusicController : public QObject
 public:
     explicit MusicController(QObject *parent = nullptr);
 
-    void loadMusic(QStringView path);
+    void loadMusic(const QString& path);
 signals:
     void setSliderVolume(float value);
 public slots:

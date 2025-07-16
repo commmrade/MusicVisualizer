@@ -20,12 +20,10 @@ ControllerWidget::~ControllerWidget()
     delete ui;
 }
 
-void ControllerWidget::loadMusic(QStringView path)
+void ControllerWidget::loadMusic(const QString& path)
 {
     m_musicController.loadMusic(path);
 }
-
-
 
 void ControllerWidget::on_volumeSlider_valueChanged(int value)
 {

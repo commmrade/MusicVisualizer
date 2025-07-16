@@ -44,41 +44,43 @@ MusicController::MusicController(QObject *parent)
     connect(m_decoder, QOverload<QAudioDecoder::Error>::of(&QAudioDecoder::error), [](QAudioDecoder::Error err) {
         spdlog::error("Error decoding audio: {}", static_cast<int>(err));
     });
+
+    connect(m_audioSink, &QAudioSink::stateChanged, [](QtAudio::State state) {
+        qDebug() << state;
+    });
 }
 
 
 
-void MusicController::loadMusic(QStringView path)
+void MusicController::loadMusic(const QString& path)
 {
     m_audioSamples.clear();
 
     m_decoder->stop();
 
-
     if (m_audioSink) {
         delete m_audioSink;
         m_audioSink = nullptr; // Can't use QAudioSink::reset, since QAudioSink interface doesn't offer a way of setting a different QAudioFormat
+
         m_isPlaying = false;
         if (m_audioFile->isOpen()) {
             m_audioFile->close();
             m_audioFile->flush();
         }
+
         m_audioDevice = nullptr;
-        delete m_audioDevice;
     }
 
     m_audioFile->setFileName(QString{path});
     if (!m_audioFile->open(QIODevice::ReadOnly)) {
-        spdlog::error("Such file does not exist: {}", path.toString().toStdString());
+        spdlog::error("Such file does not exist: {}", path.toStdString());
         return;
     }
 
     m_decoder->setSourceDevice(m_audioFile);
     m_decoder->start();
 
-
-
-    m_pushTimer.start(20);
+    m_pushTimer.start(10);
 }
 
 void MusicController::setVolume(int value)
