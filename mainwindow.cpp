@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QFileDialog>
 #include <QDir>
+#include <filesystem>
 #include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -21,8 +22,8 @@ MainWindow::~MainWindow()
 void MainWindow::on_actionLoad_Music_triggered()
 {
     QString filename = QFileDialog::getOpenFileName(this, tr("Open audio file"), QDir::homePath(), tr("Audio files (*.mp3, *.wav);;All files (*.*)"));
-    if (filename.isEmpty()) {
-        QMessageBox::warning(this, "Warning", "Path to audio file is empty!");
+    if (filename.isEmpty() || !std::filesystem::exists(filename.toStdString())) {
+        QMessageBox::warning(this, "Warning", "Audio could not be loaded!");
         return;
     }
     ui->controllerWidget->loadMusic(filename);
