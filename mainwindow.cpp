@@ -13,6 +13,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     enableGUI(false);
+
+    QObject::connect(&ui->controllerWidget->m_musicController, &MusicController::sendBuffer, ui->visualizerWidget, &VisualizerWidget::acceptBuffer);
 }
 
 MainWindow::~MainWindow()

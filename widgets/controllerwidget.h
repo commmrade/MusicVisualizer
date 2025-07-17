@@ -15,6 +15,7 @@ class ControllerWidget : public QWidget
 public:
     explicit ControllerWidget(QWidget *parent = nullptr);
     ~ControllerWidget();
+    MusicController m_musicController;
 
     void loadMusic(const QString& path);
 private slots:
@@ -27,7 +28,7 @@ signals:
     void mutePressed();
 private:
     Ui::ControllerWidget *ui;
-    MusicController m_musicController;
+
 
     float m_oldVolume;
     bool m_isMuted;

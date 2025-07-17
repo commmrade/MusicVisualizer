@@ -25,6 +25,8 @@ public slots:
     void playOrPause();
     void mute();
 
+signals:
+    void sendBuffer(QAudioBuffer buffer);
 private:
     QAudioDecoder* m_decoder{nullptr};
     QAudioSink* m_audioSink{nullptr};

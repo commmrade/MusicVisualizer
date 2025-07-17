@@ -17,7 +17,7 @@ MusicController::MusicController(QObject *parent)
         if (buffer.isValid()) {
             if (!m_audioSink) {
                 QAudioFormat format = buffer.format();
-
+                qDebug() << "format" << format.sampleFormat();
                 m_audioSink = new QAudioSink(format, this);
                 m_audioDevice = m_audioSink->start();
                 m_audioSink->setVolume(DEFAULT_SOUND_VOLUME);
@@ -34,8 +34,9 @@ MusicController::MusicController(QObject *parent)
             auto buffer = m_audioSamples.front();
             m_audioSamples.append(buffer);
             m_audioSamples.pop_front();
-
             m_audioDevice->write(buffer.constData<char>(), buffer.byteCount());
+
+            emit sendBuffer(std::move(buffer));
         }
     });
     connect(m_decoder, &QAudioDecoder::finished, this, [this] {
