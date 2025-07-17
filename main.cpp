@@ -20,7 +20,6 @@ int main(int argc, char *argv[])
     QString themeStr = settings.value("gui/theme", "Dark").toString();
     QString themeLoc = themeStr == "Dark" ? ":/qss/generalDark.qss" : ":/qss/generalLight.qss";
 
-
     QFile file(themeLoc);
     if (file.open(QIODevice::ReadOnly)) {
         a.setStyleSheet(file.readAll());
