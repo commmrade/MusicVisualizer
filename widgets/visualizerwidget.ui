@@ -16,17 +16,7 @@
   <property name="styleSheet">
    <string notr="true">background-color: black;</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="QWidget" name="widget" native="true">
-     <property name="styleSheet">
-      <string notr="true">color: white;
-background-color: white;</string>
-     </property>
-     <layout class="QFormLayout" name="formLayout"/>
-    </widget>
-   </item>
-  </layout>
+  <layout class="QGridLayout" name="gridLayout"/>
  </widget>
  <resources/>
  <connections/>

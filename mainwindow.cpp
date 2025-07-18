@@ -13,6 +13,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     enableGUI(false);
+
+    connect(&ui->controllerWidget->m_musicController, &MusicController::bufferReady, ui->visualizerWidget, &VisualizerWidget::bufferAccept);
 }
 
 MainWindow::~MainWindow()
@@ -22,7 +24,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_actionLoad_Music_triggered()
 {
-    QString filename = QFileDialog::getOpenFileName(this, tr("Open audio file"), QDir::homePath(), tr("Audio files (*.mp3, *.wav);;All files (*.*)"));
+    QString filename = QFileDialog::getOpenFileName(this, tr("Open audio file"), QDir::homePath(), tr("Audio files (*.mp3 *.wav);;All files (*.*)"));
     if (filename.isEmpty() || !std::filesystem::exists(filename.toStdString())) {
         spdlog::error("Such file does not exist: {}", filename.toStdString());
         QMessageBox::warning(this, "Warning", "Audio could not be loaded!");

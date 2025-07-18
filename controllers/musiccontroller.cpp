@@ -36,6 +36,8 @@ MusicController::MusicController(QObject *parent)
             m_audioSamples.pop_front();
 
             m_audioDevice->write(buffer.constData<char>(), buffer.byteCount());
+
+            emit bufferReady(std::move(buffer));
         }
     });
     connect(m_decoder, &QAudioDecoder::finished, this, [this] {
@@ -80,7 +82,7 @@ void MusicController::loadMusic(const QString& path)
     m_decoder->setSourceDevice(m_audioFile);
     m_decoder->start();
 
-    m_pushTimer.start(10);
+    m_pushTimer.start(5);
 }
 
 void MusicController::setVolume(int value)

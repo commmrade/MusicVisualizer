@@ -20,6 +20,8 @@ public:
     void loadMusic(const QString& path);
 signals:
     void setSliderVolume(float value);
+
+    void bufferReady(QAudioBuffer buffer);
 public slots:
     void setVolume(int value);
     void playOrPause();

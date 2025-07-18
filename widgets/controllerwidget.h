@@ -12,7 +12,10 @@ class ControllerWidget : public QWidget
 {
     Q_OBJECT
 
+
 public:
+    MusicController m_musicController;
+
     explicit ControllerWidget(QWidget *parent = nullptr);
     ~ControllerWidget();
 
@@ -27,7 +30,7 @@ signals:
     void mutePressed();
 private:
     Ui::ControllerWidget *ui;
-    MusicController m_musicController;
+
 
     float m_oldVolume;
     bool m_isMuted;
