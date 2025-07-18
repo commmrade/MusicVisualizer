@@ -23,6 +23,7 @@ private:
     void paintEvent(QPaintEvent* event) override;
 
     QAudioBuffer buffer;
+    QList<double> freqBins;
 
     Ui::VisualizerWidget *ui;
 };

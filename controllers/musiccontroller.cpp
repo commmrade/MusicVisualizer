@@ -82,7 +82,7 @@ void MusicController::loadMusic(const QString& path)
     m_decoder->setSourceDevice(m_audioFile);
     m_decoder->start();
 
-    m_pushTimer.start(5);
+    m_pushTimer.start(10);
 }
 
 void MusicController::setVolume(int value)
