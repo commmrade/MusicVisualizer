@@ -47,8 +47,8 @@ void VisualizerWidget::bufferAccept(std::array<char, DEFAULT_RINGBUF_SIZE> buffe
             // qDebug() << "float";
             for (auto i = 0; i < size; i += format.channelCount()) {
                 double t = static_cast<double>(i) / (size - 1);
-                double hann = 0.5 - 0.5 * std::cos(2 * std::numbers::pi * t);
-                // double hann = 1.0;
+                // double hann = 0.5 - 0.5 * std::cos(2 * std::numbers::pi * t);
+                double hann = 1.0;
                 samples.emplaceBack(static_cast<double>(raw_samples[i] * hann));
             }
 
@@ -59,8 +59,8 @@ void VisualizerWidget::bufferAccept(std::array<char, DEFAULT_RINGBUF_SIZE> buffe
 
             for (auto i = 0; i < size; i += format.channelCount()) {
                 double t = static_cast<double>(i) / (size - 1);
-                double hann = 0.5 - 0.5 * std::cos(2 * std::numbers::pi * t);
-                // double hann = 1.0;
+                // double hann = 0.5 - 0.5 * std::cos(2 * std::numbers::pi * t);
+                double hann = 1.0;
                 double normalized = static_cast<double>(raw_samples[i] / 32768.0);
                 samples.emplaceBack(normalized * hann); // take onlty 1 channel
             }
@@ -72,14 +72,15 @@ void VisualizerWidget::bufferAccept(std::array<char, DEFAULT_RINGBUF_SIZE> buffe
         }
     }
 
+
     size = samples.size();
     fftw_complex* out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * size);
     fftw_plan plan = fftw_plan_dft_r2c_1d(size, samples.data(), out, FFTW_ESTIMATE);
     fftw_execute(plan);
 
     // // Calc amplitudes and normalize them
-    QList<double> magnitudes(size / 2);
-    for (auto i = 0; i < size / 2; ++i) {
+    QList<double> magnitudes(size / 2 + 1);
+    for (auto i = 0; i <= size / 2; ++i) {
         auto real = out[i][0];
         auto img = out[i][1];
         auto value = std::sqrt(real * real + img * img); // == std::abs(complex)
@@ -97,7 +98,7 @@ void VisualizerWidget::bufferAccept(std::array<char, DEFAULT_RINGBUF_SIZE> buffe
     }
 
 
-    constexpr int binCnt = 40;
+    constexpr int binCnt = 80;
     const int binWidth = magnitudes.size() / binCnt;
 
     QList<double> freqBins(binCnt, 0.0);
@@ -132,9 +133,9 @@ void VisualizerWidget::paintEvent(QPaintEvent *event)
 
     painter.setPen(Qt::blue);
     auto posX = 0;
-    for (auto amplitude : freqBins) {
+    for (auto magnitude : freqBins) {
         // qDebug() << amplitude;
-        auto finalValue = std::clamp(amplitude * 200.0, 0.0, 200.0); // Масштабирование
+        auto finalValue = std::clamp(magnitude * 200.0, 0.0, 200.0); // Масштабирование
         painter.fillRect(posX, 200, 10, -finalValue, Qt::blue);
         posX += 13;
     }
