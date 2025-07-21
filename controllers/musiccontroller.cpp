@@ -35,9 +35,13 @@ MusicController::MusicController(QObject *parent)
             m_audioSamples.append(buffer);
             m_audioSamples.pop_front();
 
-            m_audioDevice->write(buffer.constData<char>(), buffer.byteCount());
+            const auto* bufData = buffer.constData<char>();
+            const auto bufDataSize = buffer.byteCount();
 
-            emit bufferReady(std::move(buffer));
+            m_audioDevice->write(bufData, bufDataSize);
+            m_ringBuffer.push_range(std::span<const char>{bufData, static_cast<std::size_t>(bufDataSize)});
+
+            emit bufferReady(m_ringBuffer.get_data(), buffer.format());
         }
     });
     connect(m_decoder, &QAudioDecoder::finished, this, [this] {

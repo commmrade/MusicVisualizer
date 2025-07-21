@@ -8,6 +8,7 @@
 #include <QList>
 #include <QTimer>
 #include <QFile>
+#include "ringbuffer.h"
 
 class MusicController : public QObject
 {
@@ -21,7 +22,7 @@ public:
 signals:
     void setSliderVolume(float value);
 
-    void bufferReady(QAudioBuffer buffer);
+    void bufferReady(std::array<char, DEFAULT_RINGBUF_SIZE> samples, QAudioFormat format);
 public slots:
     void setVolume(int value);
     void playOrPause();
@@ -41,6 +42,8 @@ private:
     bool m_isPlaying{false}; //  used for pause unpause
     bool m_isMuted{false};
     float m_oldVolume;
+
+    RingBuffer<char, DEFAULT_RINGBUF_SIZE> m_ringBuffer;
 };
 
 #endif // MUSICCONTROLLER_H

@@ -3,6 +3,8 @@
 #include <spdlog/spdlog.h>
 #include <complex>
 #include <QPainter>
+#include <print>
+#include <fftw3.h>
 
 VisualizerWidget::VisualizerWidget(QWidget *parent)
     : QWidget(parent)
@@ -34,84 +36,35 @@ int highestPowerOfTwo(int n)
     return res;
 }
 
-
-using cd = std::complex<double>;
-void fft(QList<cd> & a, bool invert = false) {
-    int n = a.size();
-    if (n == 1)
-        return;
-
-    QList<cd> a0(n / 2), a1(n / 2);
-    for (int i = 0; 2 * i < n; i++) {
-        a0[i] = a[2*i];
-        a1[i] = a[2*i+1];
-    }
-    fft(a0, invert);
-    fft(a1, invert);
-
-    double ang = 2 * std::numbers::pi / n * (invert ? -1 : 1);
-    cd w(1), wn(cos(ang), sin(ang));
-    for (int i = 0; 2 * i < n; i++) {
-        a[i] = a0[i] + w * a1[i];
-        a[i + n/2] = a0[i] - w * a1[i];
-        if (invert) {
-            a[i] /= 2;
-            a[i + n/2] /= 2;
-        }
-        w *= wn;
-    }
-}
-
-
-
-void VisualizerWidget::bufferAccept(QAudioBuffer buffer)
+void VisualizerWidget::bufferAccept(std::array<char, DEFAULT_RINGBUF_SIZE> buffer, QAudioFormat format)
 {
-    // this->buffer = std::move(buffer);
-    if (!buffer.isValid()) return;
-    QAudioFormat format = buffer.format();
-    // if (format.channelCount() != 1) throw std::runtime_error("Fuck");
-    if (buffer.byteCount() / format.bytesPerSample() < 100) return;
-    size_t size = buffer.byteCount() / format.bytesPerSample();
-    if (!isPowerOfTwo(size)) {
-        size = highestPowerOfTwo(size);
-    }
-
-    QList<std::complex<double>> samples;
+    size_t size = buffer.size() / format.bytesPerSample();
+    QList<double> samples;
 
     switch (format.sampleFormat()) {
         case QAudioFormat::SampleFormat::Float: {
-            const float* raw_samples = buffer.constData<float>();
-
+            const float* raw_samples = reinterpret_cast<const float*>(buffer.data());
+            // qDebug() << "float";
             for (auto i = 0; i < size; i += format.channelCount()) {
                 double t = static_cast<double>(i) / (size - 1);
-                double hann = 0.5 - 0.5 * std::cosf(2 * std::numbers::pi * t);
-
-                auto sum = 0.0;
-                for (auto j = 0; j < format.channelCount(); ++j) {
-                    sum += raw_samples[i + j];
-                }
-                sum /= format.channelCount();
-
-                samples.emplaceBack(static_cast<double>(sum * hann));
+                double hann = 0.5 - 0.5 * std::cos(2 * std::numbers::pi * t);
+                // double hann = 1.0;
+                samples.emplaceBack(static_cast<double>(raw_samples[i] * hann));
             }
 
             break;
         }
         case QAudioFormat::SampleFormat::Int16: {
-            auto* raw_samples = buffer.constData<int16_t>();
+            auto* raw_samples = reinterpret_cast<const int16_t*>(buffer.data());
 
-            for (auto i = 0; i < size; ++i) {
+            for (auto i = 0; i < size; i += format.channelCount()) {
                 double t = static_cast<double>(i) / (size - 1);
-                double hann = 0.5 - 0.5 * std::cosf(2 * std::numbers::pi * t);
-
-                auto sum = 0.0;
-                for (auto j = 0; j < format.channelCount(); ++j) {
-                    sum += raw_samples[i + j];
-                }
-                sum /= format.channelCount();
-
-                samples.emplaceBack(static_cast<double>(sum * hann));
+                double hann = 0.5 - 0.5 * std::cos(2 * std::numbers::pi * t);
+                // double hann = 1.0;
+                double normalized = static_cast<double>(raw_samples[i] / 32768.0);
+                samples.emplaceBack(normalized * hann); // take onlty 1 channel
             }
+
             break;
         }
         default: {
@@ -119,45 +72,57 @@ void VisualizerWidget::bufferAccept(QAudioBuffer buffer)
         }
     }
 
-    fft(samples);
+    size = samples.size();
+    fftw_complex* out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * size);
+    fftw_plan plan = fftw_plan_dft_r2c_1d(size, samples.data(), out, FFTW_ESTIMATE);
+    fftw_execute(plan);
 
-    // Calc amplitudes and normalize them
-    QList<double> amplitudes(size / 2);
+    // // Calc amplitudes and normalize them
+    QList<double> magnitudes(size / 2);
     for (auto i = 0; i < size / 2; ++i) {
-        amplitudes[i] = 20.0 * std::log10(std::fabs(samples[i])); // Децибелы
-        // amplitudes[i] = std::fabs(samples[i]);
-    }
+        auto real = out[i][0];
+        auto img = out[i][1];
+        auto value = std::sqrt(real * real + img * img); // == std::abs(complex)
 
-    // Нормализую децибелы
-    auto maxAmp = *std::ranges::max_element(amplitudes, {}, [](auto x) {
+        magnitudes[i] = value;
+    }
+    auto maxAmp = *std::ranges::max_element(magnitudes, {}, [](auto x) {
         return std::fabs(x);
     });
-    std::ranges::for_each(amplitudes, [=](auto& value) {
-        value /= maxAmp;
-    });
+
+    if (maxAmp != 0) {
+        std::ranges::for_each(magnitudes, [=](auto& value) {
+            value /= maxAmp;
+        });
+    }
 
 
-    // Split amplitudes into freq bins
-    constexpr int binCnt = 80;
-    const int binWidth = amplitudes.size() / binCnt;
+    constexpr int binCnt = 40;
+    const int binWidth = magnitudes.size() / binCnt;
+
     QList<double> freqBins(binCnt, 0.0);
 
-    for (auto i = 0; i < amplitudes.size(); ++i) {
+    for (auto i = 0; i < magnitudes.size(); ++i) {
         int idx = i / binWidth;
         if (idx < binCnt) {
-            freqBins[idx] += amplitudes[i];
+            freqBins[idx] += magnitudes[i];
         }
     }
 
     // normalize freq bins
     auto maxFreq = *std::ranges::max_element(freqBins);
-    std::ranges::for_each(freqBins, [=](auto& value) {
-        value /= maxFreq;
-    });
+
+    if (maxFreq > 0) {
+        std::ranges::for_each(freqBins, [=](auto& value) {
+            value /= maxFreq;
+        });
+    }
+
     this->freqBins = std::move(freqBins);
 
-
     update();
+    fftw_free(out);
+    fftw_destroy_plan(plan);
 }
 
 void VisualizerWidget::paintEvent(QPaintEvent *event)
@@ -168,8 +133,9 @@ void VisualizerWidget::paintEvent(QPaintEvent *event)
     painter.setPen(Qt::blue);
     auto posX = 0;
     for (auto amplitude : freqBins) {
+        // qDebug() << amplitude;
         auto finalValue = std::clamp(amplitude * 200.0, 0.0, 200.0); // Масштабирование
-        painter.fillRect(posX, 200, 5, -finalValue, Qt::blue);
-        posX += 7;
+        painter.fillRect(posX, 200, 10, -finalValue, Qt::blue);
+        posX += 13;
     }
 }

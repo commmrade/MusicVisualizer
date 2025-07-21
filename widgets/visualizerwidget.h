@@ -3,6 +3,8 @@
 
 #include <QWidget>
 #include <QAudioBuffer>
+#include <array>
+#include "ringbuffer.h"
 
 namespace Ui {
 class VisualizerWidget;
@@ -17,12 +19,10 @@ public:
     ~VisualizerWidget();
 
 public slots:
-    void bufferAccept(QAudioBuffer buffer);
+    void bufferAccept(std::array<char, DEFAULT_RINGBUF_SIZE> buffer, QAudioFormat format);
 
 private:
     void paintEvent(QPaintEvent* event) override;
-
-    QAudioBuffer buffer;
     QList<double> freqBins;
 
     Ui::VisualizerWidget *ui;

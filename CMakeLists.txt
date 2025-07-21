@@ -9,6 +9,9 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(FFTW REQUIRED IMPORTED_TARGET fftw3)
+
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Multimedia)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia)
 find_package(spdlog REQUIRED)
@@ -20,7 +23,7 @@ set(PROJECT_SOURCES
         mainwindow.ui
 )
 
-include_directories(ui widgets controllers)
+include_directories(ui widgets controllers common)
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(music-visualizer
@@ -32,6 +35,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         widgets/visualizerwidget.h widgets/visualizerwidget.cpp widgets/visualizerwidget.ui
         images.qrc
         themes.qrc
+        common/ringbuffer.h common/ringbuffer.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET music-visualizer APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -51,7 +55,13 @@ else()
     endif()
 endif()
 
-target_link_libraries(music-visualizer PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Multimedia spdlog::spdlog)
+target_link_libraries(music-visualizer PRIVATE
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Multimedia
+    spdlog::spdlog
+    PkgConfig::FFTW
+)
+
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
