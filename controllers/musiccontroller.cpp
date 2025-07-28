@@ -3,6 +3,8 @@
 #include <QDebug>
 #include <spdlog/spdlog.h>
 #include <QMessageBox>
+#include <QMediaPlayer>
+#include <QMediaMetaData>
 
 static constexpr double DEFAULT_SOUND_VOLUME = 0.5;
 

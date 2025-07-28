@@ -20,6 +20,8 @@ public:
 private slots:
     void on_actionLoad_Music_triggered();
 
+    void on_actionPick_color_triggered();
+
 private:
     Ui::MainWindow *ui;
 

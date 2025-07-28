@@ -15,6 +15,7 @@ pkg_check_modules(FFTW REQUIRED IMPORTED_TARGET fftw3)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Multimedia)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia)
 find_package(spdlog REQUIRED)
+find_package(taglib REQUIRED)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -60,6 +61,7 @@ target_link_libraries(music-visualizer PRIVATE
     Qt${QT_VERSION_MAJOR}::Multimedia
     spdlog::spdlog
     PkgConfig::FFTW
+    TagLib::tag
 )
 
 

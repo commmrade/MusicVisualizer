@@ -5,12 +5,18 @@
 #include <filesystem>
 #include <QMessageBox>
 #include <spdlog/spdlog.h>
+#include <QColorDialog>
+#include <QSettings>
+#include <taglib/taglib.h>
+#include <taglib/fileref.h>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    this->setFixedWidth(this->width() + 100);
+
 
     enableGUI(false);
 
@@ -30,7 +36,15 @@ void MainWindow::on_actionLoad_Music_triggered()
         QMessageBox::warning(this, "Warning", "Audio could not be loaded!");
         return;
     }
-    ui->controllerWidget->loadMusic(filename);
+
+
+    TagLib::FileRef f{filename.toStdString().c_str()};
+    if (!f.isNull() && f.tag()) {
+        auto title = f.tag()->title().to8Bit();
+        ui->label->setText(title.empty() ? QString{"Unknown song"} : QString{title.c_str()});
+        ui->controllerWidget->loadMusic(filename);
+    }
+
     enableGUI(true);
 }
 
@@ -40,5 +54,15 @@ void MainWindow::enableGUI(bool val)
 
     ui->controllerWidget->setEnabled(val);
     ui->visualizerWidget->setEnabled(val);
+}
+
+
+void MainWindow::on_actionPick_color_triggered()
+{
+    QColor color = QColorDialog::getColor();
+    auto var = QVariant::fromValue(color);
+
+    QSettings settings;
+    settings.setValue("Bars/Color", var);
 }
 

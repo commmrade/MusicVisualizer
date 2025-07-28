@@ -4,6 +4,7 @@
 #include <QPainter>
 #include <print>
 #include <fftw3.h>
+#include <QSettings>
 
 VisualizerWidget::VisualizerWidget(QWidget *parent)
     : QWidget(parent)
@@ -109,12 +110,12 @@ void VisualizerWidget::bufferAccept(std::array<char, DEFAULT_RINGBUF_SIZE> buffe
         binCounts[logIndex]++;
     }
 
-    // Усредняем каждый бин
     for (int i = 0; i < binCnt; ++i) {
         if (binCounts[i] > 0)
             freqBins[i] /= binCounts[i];
     }
-    // Нормализация по максимуму
+
+
     double maxVal = *std::ranges::max_element(freqBins);
     if (maxVal > 1e-6) {
         std::ranges::for_each(freqBins, [=](auto& value) {
@@ -132,12 +133,15 @@ void VisualizerWidget::paintEvent(QPaintEvent *event)
     // spdlog::info("here");
     QPainter painter(this);
 
-    painter.setPen(Qt::blue);
+    QSettings settings;
+    auto colorString = settings.value("Bars/Color", QString("#ffffff")).toString();
+    QColor color = QColor::fromString(colorString);
+
     auto posX = 0;
     for (auto magnitude : freqBins) {
         // qDebug() << amplitude;
         auto finalValue = std::clamp(magnitude * 200.0, 0.0, 200.0); // Масштабирование
-        painter.fillRect(posX, 200, 10, -finalValue, Qt::blue);
+        painter.fillRect(posX, 200, 10, -finalValue, color);
         posX += 13;
     }
 }
