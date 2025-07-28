@@ -24,14 +24,15 @@ MusicController::MusicController(QObject *parent)
                 m_audioDevice = m_audioSink->start();
                 m_audioSink->setVolume(DEFAULT_SOUND_VOLUME);
                 m_isPlaying = true;
+
+                m_pushTimer.start(10);
             }
             m_audioSamples.append(std::move(buffer));
 
         }
     });
     connect(&m_pushTimer, &QTimer::timeout, this, [this] {
-        int bytesFree = m_audioSink->bytesFree();
-        if (bytesFree) {
+        if (m_audioSink && m_audioSink->bytesFree()) {
             // Maybe check for empty
             auto buffer = m_audioSamples.front();
             m_audioSamples.append(buffer);
@@ -49,7 +50,8 @@ MusicController::MusicController(QObject *parent)
     connect(m_decoder, &QAudioDecoder::finished, this, [this] {
         spdlog::info("Finished processing audio");
     });
-    connect(m_decoder, QOverload<QAudioDecoder::Error>::of(&QAudioDecoder::error), [](QAudioDecoder::Error err) {
+    connect(m_decoder, QOverload<QAudioDecoder::Error>::of(&QAudioDecoder::error), [this](QAudioDecoder::Error err) {
+        m_pushTimer.stop(); // Stop timer of decoding failed, so we dont waste resources
         spdlog::error("Error decoding audio: {}", static_cast<int>(err));
     });
 
@@ -87,8 +89,6 @@ void MusicController::loadMusic(const QString& path)
 
     m_decoder->setSourceDevice(m_audioFile);
     m_decoder->start();
-
-    m_pushTimer.start(10);
 }
 
 void MusicController::setVolume(int value)
