@@ -74,24 +74,16 @@ void VisualizerWidget::bufferAccept(std::array<char, DEFAULT_RINGBUF_SIZE> buffe
 
     constexpr int binCnt = 80;
     QList<double> freqBins(binCnt, 0.0);
-    QList<int> binCounts(binCnt, 0);
 
-    // Приводим частоту к лог шкале
-    for (int i = 1; i < fftSize; ++i) {
-        double norm = static_cast<double>(i) / (fftSize - 1); // от 0 до 1
-        int logIndex = static_cast<int>(std::log10(1 + 9 * norm) * binCnt); // log10(1..10)
+    for (auto i = 1; i < fftSize; ++i) { // skip DC (i=0), optional
+        double norm = static_cast<double>(i) / (fftSize - 1); // 0..1
+        int logIndex = static_cast<int>(std::log10(1 + 9 * norm) * binCnt); // log10(1..10) scaled
+
         if (logIndex >= binCnt)
             logIndex = binCnt - 1;
 
         freqBins[logIndex] += magnitudes[i];
-        binCounts[logIndex]++;
     }
-
-    for (int i = 0; i < binCnt; ++i) {
-        if (binCounts[i] > 0)
-            freqBins[i] /= binCounts[i];
-    }
-
 
     double maxVal = *std::ranges::max_element(freqBins);
     if (maxVal > 1e-6) {
