@@ -18,46 +18,23 @@ VisualizerWidget::~VisualizerWidget()
     delete ui;
 }
 
-// inline bool isPowerOfTwo(int x)
-// {
-//     return (x & (x - 1)) == 0;
-// }
-
-// int highestPowerOfTwo(int n)
-// {
-//     int res = 0;
-//     for (int i = n; i >= 1; i--) {
-//         // If i is a power of 2
-//         if (isPowerOfTwo(i)) {
-//             res = i;
-//             break;
-//         }
-//     }
-//     return res;
-// }
-
 void VisualizerWidget::bufferAccept(std::array<char, DEFAULT_RINGBUF_SIZE> buffer, QAudioFormat format)
 {
     size_t size = buffer.size() / format.bytesPerSample();
     QList<double> samples;
-
     switch (format.sampleFormat()) {
         case QAudioFormat::SampleFormat::Float: {
             const float* raw_samples = reinterpret_cast<const float*>(buffer.data());
-            // qDebug() << "float";
-            for (auto i = 0; i < size; i += format.channelCount()) {
+            for (auto i = 1; i < size; i += format.channelCount()) {
                 double t = static_cast<double>(i) / (size - 1);
                 double hann = 0.5 - 0.5 * std::cos(2 * std::numbers::pi * t);
-                // double hann = 1.0;
                 samples.emplaceBack(static_cast<double>(raw_samples[i] * hann));
             }
-
             break;
         }
         case QAudioFormat::SampleFormat::Int16: {
-            auto* raw_samples = reinterpret_cast<const int16_t*>(buffer.data());
-
-            for (auto i = 0; i < size; i += format.channelCount()) {
+            const int16_t* raw_samples = reinterpret_cast<const int16_t*>(buffer.data());
+            for (auto i = 1; i < size; i += format.channelCount()) {
                 double t = static_cast<double>(i) / (size - 1);
                 double hann = 0.5 - 0.5 * std::cos(2 * std::numbers::pi * t);
                 // double hann = 1.0;
