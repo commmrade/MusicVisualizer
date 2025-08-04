@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QMediaPlayer>
 #include <QMediaMetaData>
+#include <algorithm>
 
 static constexpr double DEFAULT_SOUND_VOLUME = 0.5;
 
@@ -14,39 +15,8 @@ MusicController::MusicController(QObject *parent)
     m_decoder = new QAudioDecoder{this};
     m_audioFile = new QFile(this);
 
-    connect(m_decoder, &QAudioDecoder::bufferReady, this, [this] {
-        QAudioBuffer buffer = m_decoder->read();
-        if (buffer.isValid()) {
-            if (!m_audioSink) {
-                QAudioFormat format = buffer.format();
-
-                m_audioSink = new QAudioSink(format, this);
-                m_audioDevice = m_audioSink->start();
-                m_audioSink->setVolume(DEFAULT_SOUND_VOLUME);
-                m_isPlaying = true;
-
-                m_pushTimer.start(10);
-            }
-            m_audioSamples.append(std::move(buffer));
-
-        }
-    });
-    connect(&m_pushTimer, &QTimer::timeout, this, [this] {
-        if (m_audioSink && m_audioSink->bytesFree()) {
-            // Maybe check for empty
-            auto buffer = m_audioSamples.front();
-            m_audioSamples.append(buffer);
-            m_audioSamples.pop_front();
-
-            const auto* bufData = buffer.constData<char>();
-            const auto bufDataSize = buffer.byteCount();
-
-            m_audioDevice->write(bufData, bufDataSize);
-            m_ringBuffer.push_range(std::span<const char>{bufData, static_cast<std::size_t>(bufDataSize)});
-
-            emit bufferReady(m_ringBuffer.get_data(), buffer.format());
-        }
-    });
+    connect(m_decoder, &QAudioDecoder::bufferReady, this, &MusicController::bufferDecoded);
+    connect(&m_pushTimer, &QTimer::timeout, this, &MusicController::audioLoop);
     connect(m_decoder, &QAudioDecoder::finished, this, [this] {
         spdlog::info("Finished processing audio");
     });
@@ -54,21 +24,15 @@ MusicController::MusicController(QObject *parent)
         m_pushTimer.stop(); // Stop timer of decoding failed, so we dont waste resources
         spdlog::error("Error decoding audio: {}", static_cast<int>(err));
     });
-
-    connect(m_audioSink, &QAudioSink::stateChanged, [](QtAudio::State state) {
-        qDebug() << state;
-    });
 }
 
-
-
-void MusicController::loadMusic(const QString& path)
+void MusicController::loadMusic(TagLib::FileRef fileRef)
 {
     m_audioSamples.clear();
-
     m_decoder->stop();
 
     if (m_audioSink) {
+        m_totalLengthSecs.reset();
         delete m_audioSink;
         m_audioSink = nullptr; // Can't use QAudioSink::reset, since QAudioSink interface doesn't offer a way of setting a different QAudioFormat
 
@@ -77,18 +41,30 @@ void MusicController::loadMusic(const QString& path)
             m_audioFile->close();
             m_audioFile->flush();
         }
-
         m_audioDevice = nullptr;
     }
 
-    m_audioFile->setFileName(QString{path});
+    auto filepath = fileRef.file()->name();
+    m_audioFile->setFileName(QString{filepath});
     if (!m_audioFile->open(QIODevice::ReadOnly)) {
-        spdlog::error("Such file does not exist: {}", path.toStdString());
+        spdlog::error("Such file does not exist: {}", filepath);
         return;
     }
 
+    m_totalLengthSecs = fileRef.file()->audioProperties()->lengthInSeconds();
     m_decoder->setSourceDevice(m_audioFile);
     m_decoder->start();
+}
+
+void MusicController::setMusicElapsed(int value)
+{
+    auto sampleIter = std::find_if(m_audioSamples.begin(), m_audioSamples.end(), [value](auto&& sample) {
+        return static_cast<int>(sample.startTime() / 1e+6) == value;
+    });
+    if (sampleIter == m_audioSamples.end()) {
+        return;
+    }
+    std::rotate(m_audioSamples.begin(), sampleIter, m_audioSamples.end());
 }
 
 void MusicController::setVolume(int value)
@@ -115,7 +91,6 @@ void MusicController::playOrPause()
 
 void MusicController::mute()
 {
-
     if (!m_isMuted) {
         m_oldVolume = m_audioSink->volume();
         m_audioSink->setVolume(0.0);
@@ -128,5 +103,43 @@ void MusicController::mute()
         emit setSliderVolume(m_oldVolume);
 
         m_isMuted = false;
+    }
+}
+
+void MusicController::bufferDecoded()
+{
+    QAudioBuffer buffer = m_decoder->read();
+    if (buffer.isValid()) {
+        if (!m_audioSink) {
+            QAudioFormat format = buffer.format();
+
+            m_audioSink = new QAudioSink(format, this);
+            m_audioDevice = m_audioSink->start();
+            m_audioSink->setVolume(DEFAULT_SOUND_VOLUME);
+            m_isPlaying = true;
+
+            m_pushTimer.start(10);
+        }
+        m_audioSamples.append(std::move(buffer));
+
+    }
+}
+
+void MusicController::audioLoop()
+{
+    if (m_audioSink && m_audioSink->bytesFree()) {
+        // Maybe check for empty
+        auto buffer = m_audioSamples.front();
+        m_audioSamples.append(buffer);
+        m_audioSamples.pop_front();
+
+        const auto* bufData = buffer.constData<char>();
+        const auto bufDataSize = buffer.byteCount();
+
+        m_audioDevice->write(bufData, bufDataSize);
+        m_ringBuffer.push_range(std::span<const char>{bufData, static_cast<std::size_t>(bufDataSize)});
+
+        emit bufferReady(m_ringBuffer.get_data(), buffer.format());
+        emit elapsedChanged(static_cast<int>(buffer.startTime() / 1e+6), m_totalLengthSecs.value_or(1));
     }
 }

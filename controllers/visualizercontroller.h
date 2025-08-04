@@ -2,6 +2,8 @@
 #define VISUALIZERCONTROLLER_H
 
 #include <QObject>
+#include "ringbuffer.h"
+#include <QAudioFormat>
 
 class VisualizerController : public QObject
 {
@@ -9,6 +11,7 @@ class VisualizerController : public QObject
 public:
     explicit VisualizerController(QObject *parent = nullptr);
 
+    QList<double> processAudio(const std::array<char, DEFAULT_RINGBUF_SIZE>& buffer, const QAudioFormat& format);
 signals:
 };
 

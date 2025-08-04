@@ -5,6 +5,7 @@
 #include <QAudioBuffer>
 #include <array>
 #include "ringbuffer.h"
+#include "visualizercontroller.h"
 
 namespace Ui {
 class VisualizerWidget;
@@ -26,6 +27,7 @@ private:
     QList<double> freqBins;
 
     Ui::VisualizerWidget *ui;
+    VisualizerController m_visualizerController;
 };
 
 #endif // VISUALIZERWIDGET_H

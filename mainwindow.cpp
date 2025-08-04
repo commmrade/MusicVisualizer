@@ -9,6 +9,7 @@
 #include <QSettings>
 #include <taglib/taglib.h>
 #include <taglib/fileref.h>
+#include <taglib/taglib.h>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -16,11 +17,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     this->setFixedWidth(this->width() + 100);
-
-
     enableGUI(false);
 
-    connect(&ui->controllerWidget->m_musicController, &MusicController::bufferReady, ui->visualizerWidget, &VisualizerWidget::bufferAccept);
+    connect(ui->controllerWidget, &ControllerWidget::bufferReady, ui->visualizerWidget, &VisualizerWidget::bufferAccept);
 }
 
 MainWindow::~MainWindow()
@@ -40,9 +39,11 @@ void MainWindow::on_actionLoad_Music_triggered()
 
     TagLib::FileRef f{filename.toStdString().c_str()};
     if (!f.isNull() && f.tag()) {
+        qDebug() << "Audio length" << f.audioProperties()->lengthInSeconds();
+        qDebug() << "File name" << f.file()->name();
         auto title = f.tag()->title().to8Bit();
         ui->label->setText(title.empty() ? QString{"Unknown song"} : QString{title.c_str()});
-        ui->controllerWidget->loadMusic(filename);
+        ui->controllerWidget->loadMusic(f);
     }
 
     enableGUI(true);

@@ -9,6 +9,7 @@
 #include <QTimer>
 #include <QFile>
 #include "ringbuffer.h"
+#include <fileref.h>
 
 class MusicController : public QObject
 {
@@ -18,16 +19,20 @@ class MusicController : public QObject
 public:
     explicit MusicController(QObject *parent = nullptr);
 
-    void loadMusic(const QString& path);
+    void loadMusic(TagLib::FileRef fileRef);
+    void setMusicElapsed(int value);
 signals:
     void setSliderVolume(float value);
 
     void bufferReady(std::array<char, DEFAULT_RINGBUF_SIZE> samples, QAudioFormat format);
+    void elapsedChanged(int elapsedSecs, int totalSecs);
 public slots:
     void setVolume(int value);
     void playOrPause();
     void mute();
+    void bufferDecoded();
 
+    void audioLoop();
 private:
     QAudioDecoder* m_decoder{nullptr};
     QAudioSink* m_audioSink{nullptr};
@@ -42,6 +47,8 @@ private:
     bool m_isPlaying{false}; //  used for pause unpause
     bool m_isMuted{false};
     float m_oldVolume;
+
+    std::optional<int> m_totalLengthSecs{std::nullopt};
 
     RingBuffer<char, DEFAULT_RINGBUF_SIZE> m_ringBuffer;
 };
