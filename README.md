@@ -1,6 +1,15 @@
 ## Bar Music Visualizer
-This is an application for music visualization, which works like shit and I don't know why.
-Libraries used:
+Application for displaying frequency magnitudes as bars. Written in C++ with a framework QT.
+
+## Dependencies
 - spdlog
 - fftw
-- qt
+- qt6
+
+## Build
+```bash
+git clone https://github.com/commmrade/MusicVisualizer/
+mkdir build && cd build
+cmake ..
+sudo cmake --build .
+```
