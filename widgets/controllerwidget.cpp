@@ -44,7 +44,22 @@ void ControllerWidget::on_muteButton_clicked()
 
 void ControllerWidget::setSeekBarValue(int elapsed, int total)
 {
-    ui->seekBarLabel->setText(QString("%1 secs / %2 secs").arg(elapsed).arg(total));
+    auto elapsedHrs = elapsed / 3600;
+    auto elapsedMins = elapsed % 3600 / 60;
+    auto elapsedSecs = elapsed % 60;
+
+    auto totalHrs = total / 3600;
+    auto totalMins = total % 3600 / 60;
+    auto totalSecs = total % 60;
+
+    auto elapsedStr = QString{"%1:%2:%3/%4:%5:%6"}
+        .arg(elapsedHrs, 2, 10, '0')
+        .arg(elapsedMins, 2, 10, '0')
+        .arg(elapsedSecs, 2, 10, '0')
+        .arg(totalHrs, 2, 10, '0')
+        .arg(totalMins, 2, 10, '0')
+        .arg(totalSecs, 2, 10, '0');
+    ui->seekBarLabel->setText(elapsedStr);
     ui->seekBar->setMaximum(total);
     ui->seekBar->setValue(elapsed);
 }
