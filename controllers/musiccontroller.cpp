@@ -131,9 +131,7 @@ void MusicController::audioLoop()
         // Maybe check for empty
         auto buffer = m_audioSamples.front();
 
-        //
         if (buffer.byteCount() > m_audioSink->bytesFree()) return;
-        //
 
         m_audioSamples.append(buffer);
         m_audioSamples.pop_front();
