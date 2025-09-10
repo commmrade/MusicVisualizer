@@ -45,8 +45,6 @@ void MainWindow::on_actionLoad_Music_triggered()
 
     TagLib::FileRef f{filename.toStdString().c_str()};
     if (!f.isNull() && f.tag()) {
-        qDebug() << "Audio length" << f.audioProperties()->lengthInSeconds();
-        qDebug() << "File name" << f.file()->name();
         auto title = f.tag()->title().to8Bit();
         ui->label->setText(title.empty() ? QString{"Unknown song"} : QString{title.c_str()});
         ui->controllerWidget->loadMusic(f);
