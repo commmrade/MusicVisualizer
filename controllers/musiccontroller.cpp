@@ -119,6 +119,8 @@ void MusicController::bufferDecoded()
             emit okDecoding();
         }
         m_pushTimer.start();
+        // m_pushTimer.start(20);
+
         m_audioSamples.append(std::move(buffer));
     }
 }
@@ -128,6 +130,11 @@ void MusicController::audioLoop()
     if (m_audioSink && m_audioSink->bytesFree()) {
         // Maybe check for empty
         auto buffer = m_audioSamples.front();
+
+        //
+        if (buffer.byteCount() > m_audioSink->bytesFree()) return;
+        //
+
         m_audioSamples.append(buffer);
         m_audioSamples.pop_front();
 
@@ -141,6 +148,6 @@ void MusicController::audioLoop()
         emit elapsedChanged(static_cast<int>(buffer.startTime() / 1e+6), m_totalLengthSecs.value_or(1));
 
         double durationMs = buffer.duration() / 1000;
-        m_pushTimer.start(static_cast<int>(std::round(durationMs)));
+        m_pushTimer.start(static_cast<int>(durationMs * 0.8));
     }
 }
