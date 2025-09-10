@@ -35,6 +35,11 @@ signals:
     void playPressed();
     void mutePressed();
     void bufferReady(std::array<char, DEFAULT_RINGBUF_SIZE> samples, QAudioFormat format);
+
+    // Maybe success() kinda signal to enable gui
+    void error();
+    void ok();
+
 private:
     MusicController m_musicController;
     Ui::ControllerWidget *ui;

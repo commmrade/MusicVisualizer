@@ -1,5 +1,6 @@
 #include "controllerwidget.h"
 #include "ui_controllerwidget.h"
+#include <QMessageBox>
 
 ControllerWidget::ControllerWidget(QWidget *parent)
     : QWidget(parent)
@@ -15,6 +16,14 @@ ControllerWidget::ControllerWidget(QWidget *parent)
     });
     connect(&m_musicController, &MusicController::elapsedChanged, this, &ControllerWidget::setSeekBarValue);
     connect(&m_musicController, &MusicController::bufferReady, this, &ControllerWidget::bufferReady);
+
+    connect(&m_musicController, &MusicController::errorDecoding, this, [this](QAudioDecoder::Error err) {
+        QMessageBox::critical(this, tr("Error"), tr("Error when loading audio: ") + QString::number(err));
+        emit error();
+    });
+    connect(&m_musicController, &MusicController::okDecoding, this, [this]{
+        emit ok();
+    });
 }
 
 ControllerWidget::~ControllerWidget()

@@ -23,7 +23,9 @@ MusicController::MusicController(QObject *parent)
     connect(m_decoder, QOverload<QAudioDecoder::Error>::of(&QAudioDecoder::error), [this](QAudioDecoder::Error err) {
         m_pushTimer.stop(); // Stop timer of decoding failed, so we dont waste resources
         spdlog::error("Error decoding audio: {}", static_cast<int>(err));
+        emit errorDecoding(err);
     });
+
 }
 
 void MusicController::loadMusic(TagLib::FileRef fileRef)
@@ -46,10 +48,7 @@ void MusicController::loadMusic(TagLib::FileRef fileRef)
 
     auto filepath = fileRef.file()->name();
     m_audioFile->setFileName(QString{filepath});
-    if (!m_audioFile->open(QIODevice::ReadOnly)) {
-        spdlog::error("Such file does not exist: {}", filepath);
-        return;
-    }
+    m_audioFile->open(QIODevice::ReadOnly); // Not likely to not open, since we already tried to open it in mainwindow when taglib read it.
 
     m_totalLengthSecs = fileRef.file()->audioProperties()->lengthInSeconds();
     m_decoder->setSourceDevice(m_audioFile);
@@ -117,11 +116,10 @@ void MusicController::bufferDecoded()
             m_audioDevice = m_audioSink->start();
             m_audioSink->setVolume(DEFAULT_SOUND_VOLUME);
             m_isPlaying = true;
-
-            m_pushTimer.start(10);
+            emit okDecoding();
         }
+        m_pushTimer.start();
         m_audioSamples.append(std::move(buffer));
-
     }
 }
 
@@ -141,5 +139,8 @@ void MusicController::audioLoop()
 
         emit bufferReady(m_ringBuffer.get_data(), buffer.format());
         emit elapsedChanged(static_cast<int>(buffer.startTime() / 1e+6), m_totalLengthSecs.value_or(1));
+
+        double durationMs = buffer.duration() / 1000;
+        m_pushTimer.start(static_cast<int>(std::round(durationMs)));
     }
 }

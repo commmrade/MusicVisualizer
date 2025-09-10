@@ -24,6 +24,6 @@ private slots:
 private:
     Ui::MainWindow *ui;
 
-    void enableGUI(bool val);
+    void setGUIEnabled(bool val);
 };
 #endif // MAINWINDOW_H

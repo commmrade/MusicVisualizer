@@ -26,7 +26,11 @@ signals:
 
     void bufferReady(std::array<char, DEFAULT_RINGBUF_SIZE> samples, QAudioFormat format);
     void elapsedChanged(int elapsedSecs, int totalSecs);
+
+    void errorDecoding(QAudioDecoder::Error error);
+    void okDecoding();
 public slots:
+
     void setVolume(int value);
     void playOrPause();
     void mute();

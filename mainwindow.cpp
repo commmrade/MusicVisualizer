@@ -17,9 +17,15 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     this->setFixedWidth(this->width() + 100);
-    enableGUI(false);
+    setGUIEnabled(false);
 
     connect(ui->controllerWidget, &ControllerWidget::bufferReady, ui->visualizerWidget, &VisualizerWidget::bufferAccept);
+    connect(ui->controllerWidget, &ControllerWidget::error, this, [this]{
+        setGUIEnabled(false);
+    });
+    connect(ui->controllerWidget, &ControllerWidget::ok, this, [this] {
+        setGUIEnabled(true);
+    });
 }
 
 MainWindow::~MainWindow()
@@ -45,14 +51,10 @@ void MainWindow::on_actionLoad_Music_triggered()
         ui->label->setText(title.empty() ? QString{"Unknown song"} : QString{title.c_str()});
         ui->controllerWidget->loadMusic(f);
     }
-
-    enableGUI(true);
 }
 
-void MainWindow::enableGUI(bool val)
+void MainWindow::setGUIEnabled(bool val)
 {
-    spdlog::info("GUI enabled: {}", val);
-
     ui->controllerWidget->setEnabled(val);
     ui->visualizerWidget->setEnabled(val);
 }
