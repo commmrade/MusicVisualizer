@@ -34,6 +34,7 @@ public slots:
     void setVolume(int value);
     void playOrPause();
     void mute();
+
     void bufferDecoded();
 
     void audioLoop();

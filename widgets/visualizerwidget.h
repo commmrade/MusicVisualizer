@@ -21,7 +21,7 @@ public:
 
 public slots:
     void bufferAccept(std::array<char, DEFAULT_RINGBUF_SIZE> buffer, QAudioFormat format);
-
+    void clearBuffer();
 private:
     void paintEvent(QPaintEvent* event) override;
     QList<double> freqBins;

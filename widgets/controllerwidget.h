@@ -15,26 +15,23 @@ class ControllerWidget : public QWidget
 
 
 public:
-
-
     explicit ControllerWidget(QWidget *parent = nullptr);
     ~ControllerWidget();
 
     void loadMusic(TagLib::FileRef fileRef);
+    void setSeekBarValue(int elapsed, int total);
 private slots:
     void on_volumeSlider_valueChanged(int value);
     void on_playButton_clicked();
     void on_muteButton_clicked();
 
     void on_seekBar_sliderMoved(int position);
-
-public slots:
-    void setSeekBarValue(int elapsed, int total);
 signals:
     void volumeChanged(int value);
     void playPressed();
     void mutePressed();
     void bufferReady(std::array<char, DEFAULT_RINGBUF_SIZE> samples, QAudioFormat format);
+    void bufferClear();
 
     // Maybe success() kinda signal to enable gui
     void error();

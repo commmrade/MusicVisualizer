@@ -37,6 +37,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         images.qrc
         themes.qrc
         common/ringbuffer.h
+        common/settingsvalues.h
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET music-visualizer APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

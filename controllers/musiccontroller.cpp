@@ -30,6 +30,7 @@ MusicController::MusicController(QObject *parent)
 
 void MusicController::loadMusic(TagLib::FileRef fileRef)
 {
+    // Reset controllre
     m_audioSamples.clear();
     m_decoder->stop();
 
@@ -53,6 +54,7 @@ void MusicController::loadMusic(TagLib::FileRef fileRef)
     m_totalLengthSecs = fileRef.file()->audioProperties()->lengthInSeconds();
     m_decoder->setSourceDevice(m_audioFile);
     m_decoder->start();
+
 }
 
 void MusicController::setMusicElapsed(int value)
@@ -94,7 +96,7 @@ void MusicController::mute()
         m_oldVolume = m_audioSink->volume();
         m_audioSink->setVolume(0.0);
 
-        emit setSliderVolume(0.f);
+        emit setSliderVolume(.0f);
         m_isMuted = !m_isMuted;
     } else {
         m_audioSink->setVolume(m_oldVolume);

@@ -1,5 +1,6 @@
 #include "visualizercontroller.h"
 #include <fftw3.h>
+#include <QDebug>
 
 VisualizerController::VisualizerController(QObject *parent)
     : QObject{parent}
@@ -24,7 +25,6 @@ QList<double> VisualizerController::processAudio(const std::array<char, DEFAULT_
         for (auto i = 1; i < size; i += format.channelCount()) {
             double t = static_cast<double>(i) / (size - 1);
             double hann = 0.5 - 0.5 * std::cos(2 * std::numbers::pi * t);
-            // double hann = 1.0;
             double normalized = static_cast<double>(raw_samples[i] / 32768.0);
             samples.emplaceBack(normalized * hann); // take onlty 1 channel
         }
@@ -35,7 +35,7 @@ QList<double> VisualizerController::processAudio(const std::array<char, DEFAULT_
     }
     }
     auto samplesSize = samples.size();
-    int fftSize = samplesSize / 2 + 1;
+    int fftSize = samplesSize / 2 + 1; // mirrored
 
     fftw_complex* out = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * fftSize);
     fftw_plan plan = fftw_plan_dft_r2c_1d(samplesSize, samples.data(), out, FFTW_ESTIMATE);
@@ -81,6 +81,5 @@ QList<double> VisualizerController::processAudio(const std::array<char, DEFAULT_
 
     fftw_free(out);
     fftw_destroy_plan(plan);
-
     return freqBins;
 }

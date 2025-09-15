@@ -2,6 +2,10 @@
 #include "ui_controllerwidget.h"
 #include <QMessageBox>
 
+constexpr static double DEFAULT_SOUND_VOLUME = 0.5;
+constexpr static int SECS_IN_HOUR = 3600;
+constexpr static int SECS_IN_MINUTE = 60;
+
 ControllerWidget::ControllerWidget(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::ControllerWidget)
@@ -15,7 +19,9 @@ ControllerWidget::ControllerWidget(QWidget *parent)
         ui->volumeSlider->setValue(val * 100);
     });
     connect(&m_musicController, &MusicController::elapsedChanged, this, &ControllerWidget::setSeekBarValue);
+
     connect(&m_musicController, &MusicController::bufferReady, this, &ControllerWidget::bufferReady);
+    // connect(ui->, &MusicController::bufferClear, this, &ControllerWidget::bufferClear);
 
     connect(&m_musicController, &MusicController::errorDecoding, this, [this](QAudioDecoder::Error err) {
         QMessageBox::critical(this, tr("Error"), tr("Error when loading audio: ") + QString::number(err));
@@ -33,6 +39,10 @@ ControllerWidget::~ControllerWidget()
 
 void ControllerWidget::loadMusic(TagLib::FileRef fileRef)
 {
+    emit bufferClear();
+    setSeekBarValue(0, 0);
+    ui->volumeSlider->setValue(DEFAULT_SOUND_VOLUME * 100.0);
+
     m_musicController.loadMusic(fileRef);
 }
 
@@ -53,13 +63,13 @@ void ControllerWidget::on_muteButton_clicked()
 
 void ControllerWidget::setSeekBarValue(int elapsed, int total)
 {
-    auto elapsedHrs = elapsed / 3600;
-    auto elapsedMins = elapsed % 3600 / 60;
-    auto elapsedSecs = elapsed % 60;
+    auto elapsedHrs = elapsed / SECS_IN_HOUR;
+    auto elapsedMins = elapsed % SECS_IN_HOUR / SECS_IN_MINUTE;
+    auto elapsedSecs = elapsed % SECS_IN_MINUTE;
 
-    auto totalHrs = total / 3600;
-    auto totalMins = total % 3600 / 60;
-    auto totalSecs = total % 60;
+    auto totalHrs = total / SECS_IN_HOUR;
+    auto totalMins = total % SECS_IN_HOUR / SECS_IN_MINUTE;
+    auto totalSecs = total % SECS_IN_MINUTE;
 
     auto elapsedStr = QString{"%1:%2:%3/%4:%5:%6"}
         .arg(elapsedHrs, 2, 10, '0')
