@@ -39,8 +39,13 @@ public:
             m_current_idx = 0;
 
             auto range_left = range.size() - current_range_pos;
-            std::memcpy(m_container.data(), range.data() + current_range_pos, range_left * sizeof(T));
-            m_current_idx += range_left;
+            if (range_left <= m_container.size()) {
+                std::memcpy(m_container.data(), range.data() + current_range_pos, range_left * sizeof(T));
+                m_current_idx += range_left;
+            } else {
+                std::memcpy(m_container.data(), (range.data() + range.size()) - m_container.size(), m_container.size() * sizeof(T));
+                m_current_idx += m_container.size();
+            }
         }
     }
 

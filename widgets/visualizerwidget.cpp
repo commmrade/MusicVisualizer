@@ -41,6 +41,7 @@ void VisualizerWidget::clearBuffer()
 
 void VisualizerWidget::paintEvent(QPaintEvent *event)
 {
+
     if (freqBins.isEmpty()) {
         return;
     }
@@ -51,7 +52,6 @@ void VisualizerWidget::paintEvent(QPaintEvent *event)
     QColor color = QColor::fromString(colorString);
 
     auto posX = 0;
-
     auto widgetWidth = width();
     auto barWidth = widgetWidth / freqBins.size();
     for (auto magnitude : freqBins) {

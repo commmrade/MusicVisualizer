@@ -34,8 +34,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         controllers/musiccontroller.h controllers/musiccontroller.cpp
         controllers/visualizercontroller.h controllers/visualizercontroller.cpp
         widgets/visualizerwidget.h widgets/visualizerwidget.cpp widgets/visualizerwidget.ui
-        images.qrc
-        themes.qrc
+        resources/images.qrc
+        resources/themes.qrc
         common/ringbuffer.h
         common/settingsvalues.h
     )
